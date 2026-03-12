@@ -2,55 +2,31 @@
  * ============================================================
  * EXERCISE 3: Combined Logic — Order Manager
  * ============================================================
- *
- * YOUR SKILL LEVEL CHECK:
- *   This exercise combines EVERYTHING from Ex1 + Ex2, plus
- *   patterns directly from your Task Manager Vanilla JS code.
- *
- *   In your task manager you had:
- *     state = { tasks: [...state.tasks, newTask] }   ← immutable update
- *     e.preventDefault()                              ← form handling
- *     task.completed = !task.completed               ← toggle
- *     tasks.filter(t => t.status === filter)         ← filtering
- *
- *   All of that translates 1:1 into React — you just use
- *   setState instead of `state = ...` and JSX instead of innerHTML.
- *
- * ============================================================
  * WHAT YOU'LL BUILD:
- *   A full Order Manager that:
- *   - Loads orders "from an API" (async, with loading state)
- *   - Lets you filter by order status
- *   - Shows stats (total revenue, count by status)
- *   - Lets you add a new order via a form
- *   - Lets you change an order's status
- *   - Shows joined data (user name + product name per order)
+ *   A full Order Manager with a table of orders, stats bar,
+ *   status filter tabs, add-order form, and live status updates.
  *
- * ============================================================
- * NEW CONCEPT: Derived State
+ * YOUR APPROACH — in this order:
+ *   PHASE 1 → Render the table with hardcoded data (see it first)
+ *   PHASE 2 → Add state + async load (replace hardcoded data)
+ *   PHASE 3 → Wire up the form, filters, and status changes
  *
- *   Don't store things you can calculate. Instead of:
- *     const [filteredOrders, setFilteredOrders] = useState([]);
- *
- *   Just compute it from existing state:
+ * NEW CONCEPT — Derived State:
+ *   Don't store things you can calculate.
+ *   Instead of a separate filteredOrders state, just compute it:
  *     const filteredOrders = orders.filter(o =>
  *       statusFilter === 'all' || o.status === statusFilter
  *     );
- *
- *   This is called "derived state" — React re-computes it on every render.
- *   Your Vanilla JS equivalent was recalculating innerHTML on each update.
- *
+ *   React recalculates this on every render automatically.
  * ============================================================
- * TASKS — complete each TODO in order:
  */
 
 import { useState, useEffect } from 'react';
 import { orders as initialOrders, users, products } from '../data/data';
 
 // ─────────────────────────────────────────
-// FAKE API
+// FAKE API — don't change this
 // ─────────────────────────────────────────
-
 function fakeOrdersApi() {
   return new Promise((resolve) => {
     setTimeout(() => resolve(initialOrders), 800);
@@ -58,10 +34,8 @@ function fakeOrdersApi() {
 }
 
 // ─────────────────────────────────────────
-// HELPER: join order with user + product names
+// HELPER — joins order with user + product name
 // ─────────────────────────────────────────
-// You already know how to do this from your training exercises!
-
 function enrichOrder(order) {
   const user = users.find((u) => u.id === order.userId);
   const product = products.find((p) => p.id === order.productId);
@@ -72,30 +46,33 @@ function enrichOrder(order) {
   };
 }
 
+// Pre-enriched data for Phase 1 hardcoding
+const SAMPLE_ORDERS = initialOrders.map(enrichOrder);
+
 // ─────────────────────────────────────────
-// CHILD COMPONENT: StatsBar
+// COMPONENT: StatsBar
 // ─────────────────────────────────────────
+const STATUS_COLORS = {
+  completed: { bg: '#dcfce7', text: '#16a34a' },
+  pending: { bg: '#fef3c7', text: '#d97706' },
+  shipped: { bg: '#dbeafe', text: '#2563eb' },
+  cancelled: { bg: '#fee2e2', text: '#dc2626' },
+};
+const STATUS_OPTIONS = ['pending', 'shipped', 'completed', 'cancelled'];
 
 function StatsBar({ orders }) {
-  // TODO 3.1 ─────────────────────────────
-  // Compute these stats from the orders array:
-  //   totalRevenue  → sum of all order totals (use .reduce())
-  //   byStatus      → count of orders per status
-  //                   { completed: 4, pending: 2, ... }
-  //                   HINT: orders.reduce((acc, o) => {
-  //                     acc[o.status] = (acc[o.status] || 0) + 1;
-  //                     return acc;
-  //                   }, {})
+  // ── TODO 3.5 ──────────────────────────────────────────────
+  // Compute totalRevenue and byStatus from the orders prop.
+  // You've done .reduce() in your training — same thing here.
   //
+  // const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+  // const byStatus = orders.reduce((acc, o) => {
+  //   acc[o.status] = (acc[o.status] || 0) + 1;
+  //   return acc;
+  // }, {});
+  //
+  // Then replace the hardcoded $? and ? below with the real values.
   // YOUR CODE HERE ↓
-
-  const statuses = ['completed', 'pending', 'shipped', 'cancelled'];
-  const statusColors = {
-    completed: '#16a34a',
-    pending: '#d97706',
-    shipped: '#2563eb',
-    cancelled: '#dc2626',
-  };
 
   return (
     <div
@@ -106,21 +83,54 @@ function StatsBar({ orders }) {
         marginBottom: '24px',
       }}
     >
-      <div style={{ background: '#ede9fe', borderRadius: '10px', padding: '16px' }}>
-        <p style={{ margin: 0, fontSize: '12px', color: '#7c3aed', fontWeight: 600 }}>TOTAL REVENUE</p>
-        {/* TODO 3.1: display totalRevenue formatted as currency */}
-        <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700, color: '#5b21b6' }}>$?</p>
+      <div
+        style={{ background: '#ede9fe', borderRadius: '10px', padding: '16px' }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: '12px',
+            color: '#7c3aed',
+            fontWeight: 600,
+          }}
+        >
+          TOTAL REVENUE
+        </p>
+        <p
+          style={{
+            margin: '4px 0 0',
+            fontSize: '22px',
+            fontWeight: 700,
+            color: '#5b21b6',
+          }}
+        >
+          $?
+        </p>
       </div>
-      {statuses.map((status) => (
+      {['completed', 'pending', 'shipped', 'cancelled'].map((status) => (
         <div
           key={status}
-          style={{ background: '#f9fafb', borderRadius: '10px', padding: '16px', border: '1px solid #e5e7eb' }}
+          style={{
+            background: '#f9fafb',
+            borderRadius: '10px',
+            padding: '16px',
+            border: '1px solid #e5e7eb',
+          }}
         >
-          <p style={{ margin: 0, fontSize: '12px', color: statusColors[status], fontWeight: 600, textTransform: 'uppercase' }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '12px',
+              color: STATUS_COLORS[status].text,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+            }}
+          >
             {status}
           </p>
-          {/* TODO 3.1: display byStatus[status] or 0 */}
-          <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700 }}>?</p>
+          <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700 }}>
+            ?
+          </p>
         </div>
       ))}
     </div>
@@ -128,19 +138,13 @@ function StatsBar({ orders }) {
 }
 
 // ─────────────────────────────────────────
-// CHILD COMPONENT: OrderRow
+// COMPONENT: OrderRow
 // ─────────────────────────────────────────
-
-const STATUS_OPTIONS = ['pending', 'shipped', 'completed', 'cancelled'];
-const STATUS_COLORS = {
-  completed: { bg: '#dcfce7', text: '#16a34a' },
-  pending: { bg: '#fef3c7', text: '#d97706' },
-  shipped: { bg: '#dbeafe', text: '#2563eb' },
-  cancelled: { bg: '#fee2e2', text: '#dc2626' },
-};
-
 function OrderRow({ order, onStatusChange }) {
-  const colors = STATUS_COLORS[order.status] ?? { bg: '#f3f4f6', text: '#374151' };
+  const colors = STATUS_COLORS[order.status] ?? {
+    bg: '#f3f4f6',
+    text: '#374151',
+  };
 
   return (
     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -150,14 +154,6 @@ function OrderRow({ order, onStatusChange }) {
       <td style={{ padding: '12px 16px' }}>×{order.quantity}</td>
       <td style={{ padding: '12px 16px', fontWeight: 600 }}>${order.total}</td>
       <td style={{ padding: '12px 16px' }}>
-        {/* TODO 3.2 ───────────────────────────────────
-            Render a <select> dropdown for changing order status.
-            - value={order.status}
-            - onChange calls onStatusChange(order.id, e.target.value)
-            - Map STATUS_OPTIONS to <option> elements
-
-            This is exactly like your task status toggle in the task manager,
-            but instead of a button it's a dropdown. */}
         <select
           style={{
             background: colors.bg,
@@ -168,9 +164,15 @@ function OrderRow({ order, onStatusChange }) {
             fontWeight: 600,
             cursor: 'pointer',
           }}
-          // TODO 3.2: add value and onChange
+          // ── TODO 3.6 ────────────────────────────────────────
+          // Add value={order.status}
+          // Add onChange={(e) => onStatusChange(order.id, e.target.value)}
         >
-          {/* TODO 3.2: render options */}
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
       </td>
     </tr>
@@ -178,36 +180,32 @@ function OrderRow({ order, onStatusChange }) {
 }
 
 // ─────────────────────────────────────────
-// CHILD COMPONENT: AddOrderForm
+// COMPONENT: AddOrderForm
 // ─────────────────────────────────────────
-
 function AddOrderForm({ onAdd }) {
-  // TODO 3.3 ─────────────────────────────
-  // Declare form state:
-  //   userId    → '' (will be a number when selected)
-  //   productId → ''
-  //   quantity  → 1
-  //
+  // ── TODO 3.7 ──────────────────────────────────────────────
+  // Declare form state for userId, productId, quantity.
+  // const [userId, setUserId] = useState('');
+  // const [productId, setProductId] = useState('');
+  // const [quantity, setQuantity] = useState(1);
   // YOUR CODE HERE ↓
 
-  // TODO 3.4 ─────────────────────────────
+  // ── TODO 3.8 ──────────────────────────────────────────────
   // Write handleSubmit(e):
-  //   1. e.preventDefault()  ← you know this from your task manager!
-  //   2. Validate: userId and productId must not be empty
-  //   3. Find the selected product to calculate total:
-  //        const product = products.find(p => p.id === Number(productId));
-  //        const total = product.price * Number(quantity);
-  //   4. Build a new order object and call onAdd(newOrder)
-  //   5. Reset the form fields
-  //
+  //   1. e.preventDefault()
+  //   2. if (!userId || !productId) return alert('Fill all fields')
+  //   3. const product = products.find(p => p.id === Number(productId))
+  //   4. const newOrder = { id: Date.now(), userId: Number(userId), productId: Number(productId), quantity: Number(quantity), total: product.price * quantity, status: 'pending' }
+  //   5. onAdd(newOrder)
+  //   6. reset: setUserId(''), setProductId(''), setQuantity(1)
   // YOUR CODE HERE ↓
 
   return (
     <form
-      onSubmit={/* TODO 3.4: your handleSubmit */ undefined}
+      onSubmit={undefined /* ── TODO 3.8: replace with handleSubmit */}
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr auto auto auto',
+        gridTemplateColumns: '1fr 1fr auto auto',
         gap: '8px',
         alignItems: 'end',
         padding: '16px',
@@ -216,38 +214,54 @@ function AddOrderForm({ onAdd }) {
         marginBottom: '24px',
       }}
     >
-      {/* TODO 3.5 ─────────────────────────────────────
-          Wire up these form fields:
-          - Each needs value={stateVar} and onChange={...}
-          - Use e.target.value for text/select, Number(e.target.value) for quantity
-
-          COMPARE TO YOUR VANILLA JS:
-            input.addEventListener('input', e => formValues.userId = e.target.value)
-          IN REACT:
-            <select value={userId} onChange={(e) => setUserId(e.target.value)}>...</select>
-      */}
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+        <label
+          style={{
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: 600,
+            marginBottom: '4px',
+          }}
+        >
           User
         </label>
         <select
-          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          // TODO 3.5: value and onChange
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+          }}
+          // ── TODO 3.9: value={userId} onChange={(e) => setUserId(e.target.value)}
         >
           <option value="">Select user...</option>
           {users.map((u) => (
-            <option key={u.id} value={u.id}>{u.name}</option>
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
           ))}
         </select>
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+        <label
+          style={{
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: 600,
+            marginBottom: '4px',
+          }}
+        >
           Product
         </label>
         <select
-          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          // TODO 3.5: value and onChange
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+          }}
+          // ── TODO 3.9: value={productId} onChange={(e) => setProductId(e.target.value)}
         >
           <option value="">Select product...</option>
           {products
@@ -261,15 +275,27 @@ function AddOrderForm({ onAdd }) {
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+        <label
+          style={{
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: 600,
+            marginBottom: '4px',
+          }}
+        >
           Qty
         </label>
         <input
           type="number"
           min="1"
           max="99"
-          style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          // TODO 3.5: value and onChange
+          style={{
+            width: '60px',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+          }}
+          // ── TODO 3.9: value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}
         />
       </div>
 
@@ -293,46 +319,52 @@ function AddOrderForm({ onAdd }) {
 }
 
 // ─────────────────────────────────────────
-// PARENT COMPONENT: Exercise3
+// MAIN COMPONENT: Exercise3
 // ─────────────────────────────────────────
-
 export default function Exercise3() {
-  // TODO 3.6 ─────────────────────────────
+  // ════════════════════════════════════════
+  // PHASE 2 — ADD STATE
+  // (do this after Phase 1 is rendering)
+  // ════════════════════════════════════════
+
+  // ── TODO 3.3 ──────────────────────────────────────────────
   // Declare state:
-  //   orders       → [] (will be populated by async load)
-  //   loading      → false
-  //   statusFilter → 'all'
+  //   const [orders, setOrders] = useState([]);
+  //   const [loading, setLoading] = useState(false);
+  //   const [statusFilter, setStatusFilter] = useState('all');
+  // YOUR CODE HERE ↓
+
+  // ── TODO 3.4 ──────────────────────────────────────────────
+  // Load orders on mount using useEffect + fakeOrdersApi().
+  //
+  //   useEffect(() => {
+  //     setLoading(true);
+  //     fakeOrdersApi().then((data) => {
+  //       setOrders(data.map(enrichOrder));
+  //       setLoading(false);
+  //     });
+  //   }, []);
   //
   // YOUR CODE HERE ↓
 
-  // TODO 3.7 ─────────────────────────────
-  // useEffect to load orders on mount (call fakeOrdersApi()).
-  // On success: setOrders(data.map(enrichOrder))
-  // Don't forget loading state!
-  //
+  // ── TODO 3.10 ─────────────────────────────────────────────
+  // DERIVED STATE — compute filtered list, no extra useState needed.
+  // const filteredOrders = orders.filter(
+  //   (o) => statusFilter === 'all' || o.status === statusFilter
+  // );
+  // For Phase 1 use SAMPLE_ORDERS directly (see TODO 3.1 below).
   // YOUR CODE HERE ↓
 
-  // TODO 3.8 ─────────────────────────────
-  // DERIVED STATE: compute filteredOrders from orders + statusFilter.
-  // No useState needed — just a variable.
-  //
+  // ── TODO 3.11 ─────────────────────────────────────────────
+  // handleAddOrder(newOrder): add to orders immutably.
+  //   setOrders((prev) => [...prev, enrichOrder(newOrder)]);
   // YOUR CODE HERE ↓
 
-  // TODO 3.9 ─────────────────────────────
-  // handleAddOrder(newOrder):
-  //   Add the new order to state (enriched with userName + productName).
-  //   IMMUTABLE pattern (you used this in your task manager!):
-  //     setOrders(prev => [...prev, enrichOrder(newOrder)]);
-  //
-  // YOUR CODE HERE ↓
-
-  // TODO 3.10 ────────────────────────────
-  // handleStatusChange(orderId, newStatus):
-  //   Update one order's status. Immutable pattern:
-  //     setOrders(prev =>
-  //       prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
-  //     );
-  //
+  // ── TODO 3.12 ─────────────────────────────────────────────
+  // handleStatusChange(orderId, newStatus): update one order's status.
+  //   setOrders((prev) =>
+  //     prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+  //   );
   // YOUR CODE HERE ↓
 
   const statusOptions = ['all', 'pending', 'shipped', 'completed', 'cancelled'];
@@ -341,34 +373,39 @@ export default function Exercise3() {
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px' }}>
       <h1 style={{ marginBottom: '8px' }}>📦 Order Manager</h1>
       <p style={{ color: '#6b7280', marginTop: 0 }}>
-        Exercise 3 · Combined Logic (State + Props + Async)
+        Exercise 3 · Combined Logic
       </p>
 
-      {/* TODO 3.11 ──────────────────────────────────
-          Show a loading message while orders are loading.
-          Once loaded, show StatsBar, AddOrderForm, filters, and the table.
+      {/* ── TODO 3.1 ──────────────────────────────────────────
+          PHASE 1 STARTS HERE — render the table with SAMPLE_ORDERS first.
+          Just get rows showing on screen before touching any state.
 
-          STRUCTURE:
-            {loading ? (
-              <p>Loading orders...</p>
-            ) : (
-              <>
-                <StatsBar orders={orders} />
-                <AddOrderForm onAdd={handleAddOrder} />
-                ... filters ...
-                ... table ...
-              </>
-            )}
-      */}
+          Step 1 — put StatsBar on screen:
+            <StatsBar orders={SAMPLE_ORDERS} />
+
+          Step 2 — put AddOrderForm on screen:
+            <AddOrderForm onAdd={() => {}} />
+
+          Step 3 — render the table rows (see TODO 3.2 below).
+
+          Once everything is VISIBLE, come back and do Phase 2. */}
+
+      {/* STATS BAR — TODO 3.1 step 1 */}
+
+      {/* ADD ORDER FORM — TODO 3.1 step 2 */}
 
       {/* STATUS FILTER TABS */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
         {statusOptions.map((status) => (
           <button
             key={status}
-            onClick={
-              /* TODO 3.12: setStatusFilter(status) */ undefined
-            }
             style={{
               padding: '6px 16px',
               borderRadius: '20px',
@@ -376,10 +413,10 @@ export default function Exercise3() {
               cursor: 'pointer',
               fontWeight: 500,
               textTransform: 'capitalize',
-              // TODO 3.12: highlight active filter
-              background: '#e5e7eb',
-              color: '#374151',
+              background: '#e5e7eb', // ── TODO 3.13: statusFilter === status ? '#6366f1' : '#e5e7eb'
+              color: '#374151', // ── TODO 3.13: statusFilter === status ? 'white' : '#374151'
             }}
+            // ── TODO 3.13: onClick={() => setStatusFilter(status)}
           >
             {status}
           </button>
@@ -387,42 +424,64 @@ export default function Exercise3() {
       </div>
 
       {/* ORDERS TABLE */}
-      <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+      <div
+        style={{
+          overflowX: 'auto',
+          borderRadius: '10px',
+          border: '1px solid #e5e7eb',
+        }}
+      >
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            background: 'white',
+          }}
+        >
           <thead style={{ background: '#f9fafb' }}>
             <tr>
-              {['Order', 'User', 'Product', 'Qty', 'Total', 'Status'].map((h) => (
-                <th
-                  key={h}
-                  style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}
-                >
-                  {h}
-                </th>
-              ))}
+              {['Order', 'User', 'Product', 'Qty', 'Total', 'Status'].map(
+                (h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#6b7280',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {h}
+                  </th>
+                )
+              )}
             </tr>
           </thead>
           <tbody>
-            {/* TODO 3.13 ──────────────────────────────────
-                Map over filteredOrders and render an <OrderRow> for each.
-                Pass order, onStatusChange={handleStatusChange} as props.
-                Don't forget key={order.id}!
+            {/* ── TODO 3.2 ────────────────────────────────────
+                PHASE 1 — render rows using SAMPLE_ORDERS (hardcoded).
+                Same .map() pattern as Exercise 1.
 
-                If filteredOrders.length === 0, render a "No orders found" row instead:
-                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                    No orders found
-                  </td></tr>
-            */}
+                {SAMPLE_ORDERS.map((order) => (
+                  <OrderRow
+                    key={order.id}
+                    order={order}
+                    onStatusChange={() => {}}
+                  />
+                ))}
+
+                Once you see the rows → move to Phase 2.
+                After Phase 2: replace SAMPLE_ORDERS with filteredOrders
+                and onStatusChange={() => {}} with handleStatusChange. */}
           </tbody>
         </table>
       </div>
 
-      {/* TODO 3.14 (BONUS) ──────────────────────────────
-          Below the table, show a summary line:
-          "Showing X of Y orders · Total: $Z"
-          where X = filteredOrders.length, Y = orders.length,
-          Z = sum of filteredOrders totals
-
-          This is pure derived state — no extra useState needed. */}
+      {/* ── TODO 3.14 (BONUS) ───────────────────────────────
+          Show: "Showing X of Y orders · Total: $Z"
+          Pure derived — no extra state needed. */}
     </div>
   );
 }

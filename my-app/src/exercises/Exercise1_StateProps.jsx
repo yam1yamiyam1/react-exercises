@@ -2,65 +2,31 @@
  * ============================================================
  * EXERCISE 1: React State & Props — User Dashboard
  * ============================================================
- *
- * YOUR SKILL LEVEL (based on your Vanilla JS code):
- *   ✅ You already know: DOM manipulation, event listeners,
- *      array methods (.map, .filter), object destructuring,
- *      template literals, toggle logic, and state objects.
- *
- * THE MENTAL SHIFT:
- *   In your Vanilla JS task manager, you did this:
- *     state = { tasks: [...state.tasks, newTask] };
- *     document.getElementById('taskList').innerHTML = tasks.map(...).join('');
- *
- *   In React, you NEVER touch the DOM directly. Instead:
- *     setUsers([...users, newUser]);   // React re-renders automatically!
- *
- *   Think of useState like your `let state = {}` — but magical:
- *   every time you call the setter, the UI auto-updates.
- *
- * ============================================================
  * WHAT YOU'LL BUILD:
  *   A User Dashboard that displays users from your dataset with:
- *   - Filter by role (admin / moderator / user)
+ *   - A list of user cards
+ *   - Filter by role dropdown
  *   - Toggle to show only active users
- *   - Click a user card to "select" it and show their details
+ *   - Click a user card to show their details on the right
  *
+ * YOUR APPROACH — in this order:
+ *   PHASE 1 → Get it on screen (render the list, see the UI)
+ *   PHASE 2 → Add state (make it remember things)
+ *   PHASE 3 → Wire up interactions (make it respond to clicks)
  * ============================================================
- * CONCEPTS YOU'LL PRACTICE:
- *   - useState (replaces your `let state = {}`)
- *   - Props (replaces passing data via innerHTML / data attributes)
- *   - Conditional rendering (replaces your if/else DOM writes)
- *   - .map() in JSX (replaces .map().join('') + innerHTML)
- *
- * ============================================================
- * TASKS — complete each TODO in order:
  */
 
 import { useState } from 'react';
 import { users } from '../data/data';
 
 // ─────────────────────────────────────────
-// CHILD COMPONENT: UserCard
+// COMPONENT: UserCard
 // ─────────────────────────────────────────
-// This is like a reusable HTML template.
-// In Vanilla JS you'd write a function returning an HTML string.
-// Here you write a function returning JSX.
-//
-// Props are like function parameters — the parent passes data in.
+// Think of this like a reusable HTML template function.
+// It receives a `user` object as a prop (like a parameter)
+// and renders it as a card.
 
 function UserCard({ user, isSelected, onSelect }) {
-  // TODO 1.1 ─────────────────────────────
-  // Add a click handler so clicking the card calls onSelect(user.id).
-  // HINT: In your Vanilla JS you did:
-  //   card.addEventListener('click', () => state.selectedTaskIds.push(id));
-  // Here: <div onClick={() => onSelect(user.id)}>
-
-  // TODO 1.2 ─────────────────────────────
-  // Conditionally show a ★ star icon next to the name if isSelected is true.
-  // HINT: Use a ternary — {isSelected ? '★ ' : ''}
-  // This replaces your classList.toggle() pattern.
-
   return (
     <div
       style={{
@@ -71,10 +37,15 @@ function UserCard({ user, isSelected, onSelect }) {
         backgroundColor: isSelected ? '#eef2ff' : 'white',
         transition: 'all 0.2s',
       }}
-      // TODO 1.1: add onClick here
+      // ── TODO 1.6 ──────────────────────────────────────────
+      // Add onClick so clicking this card calls onSelect(user.id)
+      // This is the React version of addEventListener('click', ...)
+      // HINT: onClick={() => onSelect(user.id)}
     >
       <h3 style={{ margin: '0 0 4px' }}>
-        {/* TODO 1.2: add star if selected */}
+        {/* ── TODO 1.7 ────────────────────────────────────────
+            Show a ★ before the name if isSelected is true.
+            HINT: {isSelected ? '★ ' : ''}{user.name} */}
         {user.name}
       </h3>
       <p style={{ margin: '0', color: '#6b7280', fontSize: '14px' }}>
@@ -98,17 +69,14 @@ function UserCard({ user, isSelected, onSelect }) {
 }
 
 // ─────────────────────────────────────────
-// CHILD COMPONENT: UserDetail
+// COMPONENT: UserDetail
 // ─────────────────────────────────────────
-// Shows details for the selected user.
-// Receives the full user object as a prop.
+// Shows the full details of the selected user on the right panel.
 
 function UserDetail({ user }) {
-  // TODO 1.3 ─────────────────────────────
-  // If no user is selected (user is null), return a placeholder:
-  //   <p>Select a user to see details.</p>
-  // HINT: In Vanilla JS you'd check `if (!selectedUser) return;`
-  // In React: if (!user) return <p>...</p>;
+  // ── TODO 1.8 ──────────────────────────────────────────────
+  // If no user is selected, show a placeholder message instead.
+  // HINT: if (!user) return <p style={{ color: '#9ca3af' }}>Select a user to see details.</p>;
 
   return (
     <div
@@ -119,7 +87,6 @@ function UserDetail({ user }) {
         border: '1px solid #e5e7eb',
       }}
     >
-      {/* TODO 1.3: handle null case above this return */}
       <h2 style={{ marginTop: 0 }}>{user?.name}</h2>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <tbody>
@@ -151,39 +118,50 @@ function UserDetail({ user }) {
 }
 
 // ─────────────────────────────────────────
-// PARENT COMPONENT: Exercise1
+// MAIN COMPONENT: Exercise1
 // ─────────────────────────────────────────
-// This is the "main" component — like the top of your Vanilla JS file
-// where you held `let state = {}`.
 
 export default function Exercise1() {
-  // TODO 1.4 ─────────────────────────────
-  // Declare these 3 state variables using useState:
-  //   selectedId   → starts as null       (which user is clicked)
-  //   roleFilter   → starts as 'all'      (dropdown filter value)
-  //   activeOnly   → starts as false      (checkbox toggle)
+  // ════════════════════════════════════════
+  // PHASE 2 — ADD STATE
+  // (do this after Phase 1 is rendering)
+  // ════════════════════════════════════════
+
+  // ── TODO 1.3 ──────────────────────────────────────────────
+  // Declare 3 state variables.
+  // useState is like your `let state = {}` but React re-renders when it changes.
+  //
+  //   selectedId  → null         which user card is clicked
+  //   roleFilter  → 'all'        value of the role dropdown
+  //   activeOnly  → false        whether the checkbox is checked
   //
   // SYNTAX: const [value, setValue] = useState(initialValue);
   //
-  // Compare to your Vanilla JS:
-  //   let state = { selectedTaskIds: [], filters: { showActive: false } }
-  //
   // YOUR CODE HERE ↓
 
-  // TODO 1.5 ─────────────────────────────
-  // Filter the users array using your state values.
-  // You already know how to do this — you did it in your training exercises!
-  //   const filtered = users
-  //     .filter(u => roleFilter === 'all' || u.role === roleFilter)
-  //     .filter(u => !activeOnly || u.isActive);
+  // ── TODO 1.4 ──────────────────────────────────────────────
+  // Filter the users array based on roleFilter and activeOnly.
+  // You already know .filter() — this is identical to your training exercises.
+  //
+  // const filtered = users
+  //   .filter((u) => roleFilter === 'all' || u.role === roleFilter)
+  //   .filter((u) => !activeOnly || u.isActive);
+  //
+  // For now (before TODO 1.3 is done), just use:
+  // const filtered = users;
   //
   // YOUR CODE HERE ↓
+  const filtered = users; // ← replace this once you do TODO 1.3 + 1.4
 
-  // TODO 1.6 ─────────────────────────────
-  // Find the selected user object from the users array:
-  //   const selectedUser = users.find(u => u.id === selectedId) ?? null;
+  // ── TODO 1.5 ──────────────────────────────────────────────
+  // Find the full user object that matches selectedId.
+  //
+  // const selectedUser = users.find((u) => u.id === selectedId) ?? null;
+  //
+  // For now just use: const selectedUser = null;
   //
   // YOUR CODE HERE ↓
+  const selectedUser = null; // ← replace this once you do TODO 1.3 + 1.5
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px' }}>
@@ -192,7 +170,7 @@ export default function Exercise1() {
         Exercise 1 · State & Props
       </p>
 
-      {/* FILTERS */}
+      {/* FILTERS BAR */}
       <div
         style={{
           display: 'flex',
@@ -204,15 +182,17 @@ export default function Exercise1() {
           borderRadius: '8px',
         }}
       >
-        {/* TODO 1.7 ─────────────────────────────────────
-            Wire up this select dropdown:
-            - value should be {roleFilter}
-            - onChange should call setRoleFilter with the new value
-            HINT: onChange={(e) => setRoleFilter(e.target.value)}
-            This replaces your input event listener pattern. */}
+        {/* ── TODO 1.9 ────────────────────────────────────────
+            Connect the dropdown to state.
+            Add:  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+            This replaces addEventListener('input', ...) from Vanilla JS. */}
         <select
-          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          // TODO 1.7: add value and onChange
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+          }}
         >
           <option value="all">All Roles</option>
           <option value="admin">Admin</option>
@@ -220,51 +200,67 @@ export default function Exercise1() {
           <option value="user">User</option>
         </select>
 
-        {/* TODO 1.8 ─────────────────────────────────────
-            Wire up this checkbox:
-            - checked should be {activeOnly}
-            - onChange should toggle activeOnly (setActiveOnly(!activeOnly))
-            This replaces your btn.addEventListener('click', toggle) pattern. */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            // TODO 1.8: add checked and onChange
-          />
+        {/* ── TODO 1.10 ───────────────────────────────────────
+            Connect the checkbox to state.
+            Add:  checked={activeOnly}
+                  onChange={() => setActiveOnly(!activeOnly)} */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+          }}
+        >
+          <input type="checkbox" />
           Active users only
         </label>
 
-        <span style={{ marginLeft: 'auto', color: '#6b7280', fontSize: '14px' }}>
-          {/* TODO 1.9: Show "X of Y users" using filtered.length and users.length */}
+        {/* ── TODO 1.11 ───────────────────────────────────────
+            Replace the ? with filtered.length once TODO 1.4 is done. */}
+        <span
+          style={{ marginLeft: 'auto', color: '#6b7280', fontSize: '14px' }}
+        >
           ? of {users.length} users
         </span>
       </div>
 
       {/* MAIN LAYOUT */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}
+      >
         {/* LEFT: USER LIST */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* TODO 1.10 ──────────────────────────────────
-              Render a UserCard for each user in `filtered`.
-              HINT: filtered.map((user) => (
-                <UserCard
-                  key={user.id}        ← React needs a unique key!
-                  user={user}          ← pass the user object as prop
-                  isSelected={selectedId === user.id}
-                  onSelect={setSelectedId}
-                />
-              ))
+          {/* ── TODO 1.1 ──────────────────────────────────────
+              PHASE 1 STARTS HERE — just get the list on screen first.
+              Use filtered.map() to render a UserCard for each user.
 
-              Compare to your Vanilla JS innerHTML pattern:
-                document.getElementById('taskList').innerHTML =
-                  state.tasks.map(t => `<div class="task-card">${t.title}</div>`).join('');
+              This is the React version of:
+                element.innerHTML = users.map(u => `<div>${u.name}</div>`).join('')
 
-              KEY DIFFERENCE: No .join(''), no innerHTML — just JSX in .map() */}
+              The difference: no .join(''), no innerHTML — just JSX inside .map()
+              React also needs a unique `key` prop on each item.
+
+              HINT:
+                {filtered.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    isSelected={false}
+                    onSelect={() => {}}
+                  />
+                ))}
+
+              Once you can SEE the list, move to TODO 1.2 → then Phase 2. */}
         </div>
 
         {/* RIGHT: USER DETAIL */}
-        {/* TODO 1.11 ──────────────────────────────────
-            Render <UserDetail user={selectedUser} />
-            The UserDetail component handles the null case internally (TODO 1.3). */}
+        {/* ── TODO 1.2 ────────────────────────────────────────
+            Render the UserDetail component here.
+            Pass selectedUser as the user prop.
+            For now pass null — it will show the placeholder (TODO 1.8).
+
+            HINT: <UserDetail user={selectedUser} /> */}
       </div>
     </div>
   );
