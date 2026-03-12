@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { products } from './data.js';
 
-// Use { product } to "unpack" the data we pass in
 const ProductCard = ({ product }) => {
   return (
     <div
@@ -21,11 +21,23 @@ const ProductCard = ({ product }) => {
 };
 
 function App() {
-  // Grab just the first product from your data.js array to test
+  const [allProducts] = useState(products);
+  const [isHidden, setIsHidden] = useState(false);
+  const displayedProducts = isHidden
+    ? allProducts.filter((p) => p.inStock)
+    : allProducts;
   return (
     <div>
       <h1>React Training</h1>
-      {products.map((p) => (
+      <input
+        onChange={() => {
+          setIsHidden(!isHidden);
+        }}
+        checked={isHidden}
+        type="checkbox"
+      />
+      <label>Hide Out of Stock</label>
+      {displayedProducts.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
     </div>
