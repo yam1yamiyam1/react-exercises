@@ -263,7 +263,8 @@ export default function Exercise2() {
         </label>
       </div>
 
-      {/* ── TODO 2.1 ────────────────────────────────────────────
+      {
+        /* ── TODO 2.1 ────────────────────────────────────────────
           PHASE 1 STARTS HERE — render the grid with hardcoded data first.
           Just use the imported `products` array directly so you can see the UI.
 
@@ -274,9 +275,22 @@ export default function Exercise2() {
               ))}
             </div>
 
-          Once you can see the cards on screen → move to TODO 2.2. */}
+          Once you can see the cards on screen → move to TODO 2.2. */
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '16px',
+          }}
+        >
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      }
 
-      {/* ── TODO 2.2 ────────────────────────────────────────────
+      {
+        /* ── TODO 2.2 ────────────────────────────────────────────
           PHASE 1 STEP 2 — add the loading and error UI shells.
           Just hardcode them for now so you can see what they look like.
 
@@ -295,7 +309,9 @@ export default function Exercise2() {
           After Phase 2 is done, come back and replace the hardcoded
           products with {items} and add the conditional logic:
 
-            {loading ? <LoadingSpinner /> : error ? <ErrorBox /> : <Grid />} */}
+            {loading ? <LoadingSpinner /> : error ? <ErrorBox /> : <Grid />} */
+        <LoadingSpinner />
+      }
     </div>
   );
 }

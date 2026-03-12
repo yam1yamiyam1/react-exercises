@@ -41,11 +41,13 @@ function UserCard({ user, isSelected, onSelect }) {
       // Add onClick so clicking this card calls onSelect(user.id)
       // This is the React version of addEventListener('click', ...)
       // HINT: onClick={() => onSelect(user.id)}
+      onClick={() => onSelect(user.id)}
     >
       <h3 style={{ margin: '0 0 4px' }}>
         {/* ── TODO 1.7 ────────────────────────────────────────
             Show a ★ before the name if isSelected is true.
             HINT: {isSelected ? '★ ' : ''}{user.name} */}
+        {isSelected ? '★ ' : ''}
         {user.name}
       </h3>
       <p style={{ margin: '0', color: '#6b7280', fontSize: '14px' }}>
@@ -77,7 +79,9 @@ function UserDetail({ user }) {
   // ── TODO 1.8 ──────────────────────────────────────────────
   // If no user is selected, show a placeholder message instead.
   // HINT: if (!user) return <p style={{ color: '#9ca3af' }}>Select a user to see details.</p>;
-
+  if (!user) {
+    return <p style={{ color: '#9ca3af' }}>Select a user to see details.</p>;
+  }
   return (
     <div
       style={{
@@ -138,7 +142,9 @@ export default function Exercise1() {
   // SYNTAX: const [value, setValue] = useState(initialValue);
   //
   // YOUR CODE HERE ↓
-
+  const [selectedId, setSelectedId] = useState(null);
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [activeOnly, setActiveOnly] = useState(false);
   // ── TODO 1.4 ──────────────────────────────────────────────
   // Filter the users array based on roleFilter and activeOnly.
   // You already know .filter() — this is identical to your training exercises.
@@ -151,7 +157,9 @@ export default function Exercise1() {
   // const filtered = users;
   //
   // YOUR CODE HERE ↓
-  const filtered = users; // ← replace this once you do TODO 1.3 + 1.4
+  const filtered = users
+    .filter((u) => roleFilter === 'all' || u.role === roleFilter)
+    .filter((u) => !activeOnly || u.isActive); // ← replace this once you do TODO 1.3 + 1.4
 
   // ── TODO 1.5 ──────────────────────────────────────────────
   // Find the full user object that matches selectedId.
@@ -161,7 +169,7 @@ export default function Exercise1() {
   // For now just use: const selectedUser = null;
   //
   // YOUR CODE HERE ↓
-  const selectedUser = null; // ← replace this once you do TODO 1.3 + 1.5
+  const selectedUser = users.find((u) => u.id === selectedId) ?? null; // ← replace this once you do TODO 1.3 + 1.5
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px' }}>
@@ -188,6 +196,8 @@ export default function Exercise1() {
                   onChange={(e) => setRoleFilter(e.target.value)}
             This replaces addEventListener('input', ...) from Vanilla JS. */}
         <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
           style={{
             padding: '8px 12px',
             borderRadius: '6px',
@@ -199,7 +209,6 @@ export default function Exercise1() {
           <option value="moderator">Moderator</option>
           <option value="user">User</option>
         </select>
-
         {/* ── TODO 1.10 ───────────────────────────────────────
             Connect the checkbox to state.
             Add:  checked={activeOnly}
@@ -212,16 +221,19 @@ export default function Exercise1() {
             cursor: 'pointer',
           }}
         >
-          <input type="checkbox" />
+          <input
+            type="checkbox"
+            checked={activeOnly}
+            onChange={() => setActiveOnly(!activeOnly)}
+          />
           Active users only
         </label>
-
         {/* ── TODO 1.11 ───────────────────────────────────────
             Replace the ? with filtered.length once TODO 1.4 is done. */}
         <span
           style={{ marginLeft: 'auto', color: '#6b7280', fontSize: '14px' }}
         >
-          ? of {users.length} users
+          {filtered.length} of {users.length} users
         </span>
       </div>
 
@@ -231,7 +243,8 @@ export default function Exercise1() {
       >
         {/* LEFT: USER LIST */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* ── TODO 1.1 ──────────────────────────────────────
+          {
+            /* ── TODO 1.1 ──────────────────────────────────────
               PHASE 1 STARTS HERE — just get the list on screen first.
               Use filtered.map() to render a UserCard for each user.
 
@@ -251,16 +264,28 @@ export default function Exercise1() {
                   />
                 ))}
 
-              Once you can SEE the list, move to TODO 1.2 → then Phase 2. */}
+              Once you can SEE the list, move to TODO 1.2 → then Phase 2. */
+            filtered.map((user) => (
+              <UserCard
+                key={user.id}
+                user={user}
+                isSelected={user.id === selectedId}
+                onSelect={(id) => setSelectedId(id)}
+              />
+            ))
+          }
         </div>
 
         {/* RIGHT: USER DETAIL */}
-        {/* ── TODO 1.2 ────────────────────────────────────────
+        {
+          /* ── TODO 1.2 ────────────────────────────────────────
             Render the UserDetail component here.
             Pass selectedUser as the user prop.
             For now pass null — it will show the placeholder (TODO 1.8).
 
-            HINT: <UserDetail user={selectedUser} /> */}
+            HINT: <UserDetail user={selectedUser} /> */
+          <UserDetail user={selectedUser} />
+        }
       </div>
     </div>
   );
