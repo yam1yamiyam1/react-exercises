@@ -1,47 +1,25 @@
-import { useState } from 'react';
-import { products } from './data.js';
-
-const ProductCard = ({ product }) => {
-  return (
-    <div
-      style={{
-        border: '0.5px solid black',
-        padding: '10px',
-      }}
-    >
-      <div>Name: {product.name}</div>
-      <div>Price: {product.price}</div>
-      <div>Category: {product.category}</div>
-      <div>Quantity: {product.quantity}</div>
-      <div style={{ color: !product.inStock ? 'red' : 'green' }}>
-        {product.inStock ? 'In Stock' : 'Out of Stock'}
-      </div>
-    </div>
-  );
-};
+// import ProfileCard from './ProfileCard.jsx';
+// import ProductList from './ProductList.jsx';
+// import StatsDashboard from './StatsDashboard.jsx';
+// import UserList from './UserList.jsx';
+// import ScoreBoard from './ScoreBoard.jsx';
+// import UserEditor from './UserEditor.jsx';
+// import TagManager from './TagManager.jsx';
+// import NotificationPanel from './NotificationPanel.jsx';
+// import CartSummary from './CartSummary.jsx';
+// import ActionLogger from './ActionLogger.jsx';
+// import SearchFilter from './SearchFilter.jsx';
+// import GuestList from './GuestList.jsx';
+// import EventInspector from './EventInspector.jsx';
+// import PageTracker from './PageTracker.jsx';
+import SyncedProfile from './SyncedProfile.jsx';
 
 function App() {
-  const [allProducts] = useState(products);
-  const [isHidden, setIsHidden] = useState(false);
-  const displayedProducts = isHidden
-    ? allProducts.filter((p) => p.inStock)
-    : allProducts;
   return (
     <div>
       <h1>React Training</h1>
-      <input
-        onChange={() => {
-          setIsHidden(!isHidden);
-        }}
-        checked={isHidden}
-        type="checkbox"
-      />
-      <label>Hide Out of Stock</label>
-      {displayedProducts.map((p) => (
-        <ProductCard key={p.id} product={p} />
-      ))}
+      <SyncedProfile />
     </div>
   );
 }
-
 export default App;

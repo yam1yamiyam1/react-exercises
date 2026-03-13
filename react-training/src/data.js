@@ -80,3 +80,38 @@ export const products = [
     quantity: 1,
   },
 ];
+
+export const users = [
+  {
+    id: 1,
+    name: 'Alice',
+    age: 25,
+    isActive: true,
+    role: 'admin',
+    salary: 50000,
+  },
+  { id: 2, name: 'Bob', age: 30, isActive: false, role: 'user', salary: 40000 },
+  {
+    id: 3,
+    name: 'Charlie',
+    age: 35,
+    isActive: true,
+    role: 'user',
+    salary: 45000,
+  },
+  {
+    id: 4,
+    name: 'Diana',
+    age: 28,
+    isActive: true,
+    role: 'admin',
+    salary: 55000,
+  },
+  { id: 5, name: 'Eve', age: 22, isActive: false, role: 'user', salary: 35000 },
+];
+
+export function fetchUsers() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(users), 2000);
+  });
+}
