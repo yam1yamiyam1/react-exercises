@@ -23,7 +23,7 @@
 // import FilteredInventory from './FilteredInventory.jsx';
 // import ScoreTracker from './ScoreTracker/ScoreTracker.jsx';
 // import ProductBrowser from './ProductBrowser/ProductBrowser.jsx';
-import TabView from './TabView/TabView.jsx';
+// import TabView from './TabView/TabView.jsx'
 function App() {
   return (
     <div>
